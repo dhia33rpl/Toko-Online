@@ -1,140 +1,129 @@
-"use client";
+"use client"
 
-import { SubmitEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card"
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { SubmitEvent, useState } from "react"
+import { toast } from "sonner"
+import { parseResponseMessage, setCookie } from "@/lib/helper"
+import { useRouter } from "next/navigation"
 
-export function LoginForm({ ...props }: React.ComponentProps<typeof Card>) {
-  const router = useRouter();
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string>("")
+  const [password, setPassword] = useState<string>("")
+  const router = useRouter()
 
-  async function handleLogin(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleLogin(event: SubmitEvent<HTMLFormElement>){
+    event.preventDefault()
 
     try {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`;
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`
 
-      const payload = new FormData();
-      payload.append("email", email);
-      payload.append("password", password);
-
-      const response = await fetch(url, {
+      const requestData = new FormData()
+      requestData.append("email", email)
+      requestData.append("password", password)
+      const response = await fetch(url,{
         method: "POST",
-        body: payload,
-      });
+        body: requestData
+      })
 
-      const responseData = await response.json();
-      console.log(responseData);
-
-      const message: string =
-        typeof responseData?.message === "string"
-          ? responseData.message
-          : "Login success";
-
-      const status: boolean = responseData?.status || false;
-
-      if (!response.ok || !status) {
-        toast.error(message || "Login Failed", {
-          className: "bg-rose-500 text-white",
-        });
+      // mengubah response dari backend
+      const responseData = await response.json()
+      const message = await parseResponseMessage(responseData?.message)
+      if(!response.ok){
+        toast.warning(message, {className: "bg-yellow-50 text-yellow-500"})
         return;
       }
 
-      toast.success(message || "Login Success", {
-        className: "bg-green-500 text-white",
-      });
+      const status = responseData?.status as boolean
+      if(!status){
+        toast.warning(message, {className: "bg-yellow-50 text-yellow-500"})
+        return;
+      }
 
-      const role = responseData?.data?.role;
+      const token = responseData?.token as string
+      await setCookie("token", token)
+      toast.success(message, {className: "bg-green-100 text-green-100"})
 
-      if (role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/user/dashboard");
+      const role = responseData?.user.role as string 
+      if(role === "admin"){
+        router.replace("/admin/home")
+      }else {
+        router.replace("user/home")
       }
     } catch (error) {
       console.log(error);
-
-      toast.error("Login Failed", {
-        className: "bg-rose-500 text-white",
-      });
+      toast.error(`Something wrong, try again later`, {className: "bg-rose-50 text-rose-500"})
     }
   }
-
   return (
-    <Card {...props}>
-      <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>
-          Enter your email below to login to your account
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
-        <form onSubmit={handleLogin}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input
-                id="password"
-                type="password"
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Login to your account</CardTitle>
+          <CardDescription>
+            Enter your email below to login to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                />
+              </Field>
+              <Field>
+                <div className="flex items-center">
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <a
+                    href="#"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+                <Input id="password" type="password" required 
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <FieldDescription>
-                Enter your account password
-              </FieldDescription>
-            </Field>
-
-            <Field>
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </Field>
-
-            <Field>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/signup">Create Account</Link>
-              </Button>
-            </Field>
-
-            <FieldDescription className="text-center">
-              Don&apos;t have an account? Create one first.
-            </FieldDescription>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
-  );
+                onChange={e => setPassword(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <Button type="submit">Login</Button>
+                <Button variant="outline" type="button">
+                  Login with Google
+                </Button>
+                <FieldDescription className="text-center">
+                  Don&apos;t have an account? <a href="#">Sign up</a>
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

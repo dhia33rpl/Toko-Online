@@ -55,7 +55,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         method: "POST",
         body: payload,
       });
-
+      // parsing response dari backend
       const responseData = await response.json();
 
       const message: string =
