@@ -13,7 +13,7 @@ export async function setCookie(
 }
 
 export async function getCookie(label: string){
-    return (await cookies()).get(label)
+    return (await cookies()).get(label)?.value
 }
 
 export async function removeCookie(label: string){
