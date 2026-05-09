@@ -49,15 +49,19 @@ export default async function ProductPage() {
           Add New Product
         </button>
       </Link>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+      <h1>Halaman ini menampilkan product</h1>
+      <div className="grid grid-cols-2 md:grid-cols-4 mt-5 gap-5">
         {product.map((product) => (
           <CardProduct
             key={`product-${product.id}`}
+            id={product.id}
             name={product.nama_barang}
             price={product.harga}
             image={product.image}
             description={product.deskripsi}
-          ></CardProduct>
+          >
+            
+          </CardProduct>
         ))}
       </div>
     </div>
